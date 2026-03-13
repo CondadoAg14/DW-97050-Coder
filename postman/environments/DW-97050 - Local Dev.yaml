@@ -1,0 +1,10 @@
+name: 'DW-97050 - Local Dev'
+values:
+  - key: baseUrl
+    value: 'http://localhost:8080'
+    enabled: true
+    type: default
+  - key: jwt
+    value: ''
+    enabled: true
+    type: default

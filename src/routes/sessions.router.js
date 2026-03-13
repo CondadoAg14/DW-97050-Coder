@@ -17,27 +17,55 @@ const router = Router()
 
 // REGISTER
 
-router.post(
-"/register",
-passport.authenticate("register",{session:false}),
-(req,res)=>{
-res.send({status:"success"})
+router.post("/register",(req,res,next)=>{
+
+passport.authenticate("register",(err,user,info)=>{
+
+if(err){
+return res.status(500).send({error:err.message})
 }
-)
+
+if(!user){
+return res.status(400).send({
+error: info?.message || "No se pudo registrar el usuario"
+})
+}
+
+res.send({
+status:"success",
+message:"Usuario registrado"
+})
+
+})(req,res,next)
+
+})
 
 // LOGIN
 
-router.post(
-"/login",
-passport.authenticate("login",{session:false}),
-(req,res)=>{
+router.post("/login",(req,res,next)=>{
 
-const token = generateToken(req.user)
+passport.authenticate("login",(err,user,info)=>{
 
-res.send({token})
-
+if(err){
+return res.status(500).send({error:err.message})
 }
-)
+
+if(!user){
+return res.status(400).send({
+error: info?.message || "Credenciales incorrectas"
+})
+}
+
+const token = generateToken(user)
+
+res.send({
+status:"success",
+token
+})
+
+})(req,res,next)
+
+})
 
 // CURRENT
 

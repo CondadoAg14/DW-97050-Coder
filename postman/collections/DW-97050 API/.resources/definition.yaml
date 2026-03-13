@@ -1,0 +1,6 @@
+$kind: collection
+name: 'DW-97050 API'
+variables:
+  - key: baseUrl
+    value: '{{baseUrl}}'
+    description: 'Base URL resolved from the active environment'

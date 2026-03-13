@@ -1,0 +1,45 @@
+$kind: http-request
+name: Sessions - Login
+method: POST
+url: http://localhost:8080/api/sessions/login
+auth:
+  type: noauth
+order: 2000
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "usuario@test.com",
+      "password": "1234"
+    }
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test('Status code is 200', function () {
+        pm.response.to.have.status(200);
+      });
+
+
+      pm.test('Content-Type is JSON', function () {
+        pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json');
+      });
+
+
+      pm.test('Response has token', function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('token');
+        pm.expect(json.token).to.be.a('string');
+      });
+
+
+      // Optional convenience: store token in environment for subsequent calls
+
+      const json = pm.response.json();
+
+      if (json && json.token) {
+        pm.environment.set('jwt', json.token);
+      }
+    language: text/javascript

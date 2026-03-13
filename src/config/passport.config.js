@@ -1,105 +1,105 @@
 import passport from "passport"
 import {Strategy as LocalStrategy} from "passport-local"
-import {Strategy as JwtStrategy,ExtractJwt} from "passport-jwt"
+import {Strategy as JwtStrategy, ExtractJwt} from "passport-jwt"
 
 import UserRepository from "../repositories/user.repository.js"
-import {createHash,isValidPassword} from "../utils/bcrypt.js"
+import {createHash, isValidPassword} from "../utils/bcrypt.js"
 
 const userRepository = new UserRepository()
 
-const initializePassport = ()=>{
+const initializePassport = () => {
 
-// REGISTER
+  // REGISTER
 
-passport.use("register",
-new LocalStrategy(
-{
-passReqToCallback:true,
-usernameField:"email"
-},
-async(req,email,password,done)=>{
+  passport.use(
+    "register",
+    new LocalStrategy(
+      {
+        passReqToCallback: true,
+        usernameField: "email"
+      },
+      async (req, email, password, done) => {
+        try {
 
-try{
+          const { first_name, last_name } = req.body
 
-const {first_name,last_name} = req.body
+          if (!first_name || !last_name || !password) {
+            return done(null, false, { message: "Datos incompletos" })
+          }
 
-if(!first_name || !last_name){
-return done(null,false,{message:"Datos incompletos"})
-}
+          const exists = await userRepository.getByEmail(email)
 
-const exists = await userRepository.getByEmail(email)
+          if (exists) {
+            return done(null, false, { message: "Usuario ya existe" })
+          }
 
-if(exists){
-return done(null,false,{message:"Usuario ya existe"})
-}
+          const newUser = {
+            first_name,
+            last_name,
+            email,
+            password: createHash(password),
+            role: "user"
+          }
 
-const user = await userRepository.create({
+          const user = await userRepository.create(newUser)
 
-first_name,
-last_name,
-email,
-password:createHash(password),
-role:"user"
+          return done(null, user)
 
-})
+        } catch (error) {
+          return done(error)
+        }
+      }
+    )
+  )
 
-return done(null,user)
+  // LOGIN
 
-}catch(error){
+  passport.use(
+    "login",
+    new LocalStrategy(
+      {
+        usernameField: "email"
+      },
+      async (email, password, done) => {
+        try {
 
-return done(error)
+          const user = await userRepository.getByEmail(email)
 
-}
+          if (!user) {
+            return done(null, false, { message: "Usuario no encontrado" })
+          }
 
-}
-))
+          if (!isValidPassword(user, password)) {
+            return done(null, false, { message: "Password incorrecto" })
+          }
 
-// LOGIN
+          return done(null, user)
 
-passport.use("login",
-new LocalStrategy(
-{
-usernameField:"email"
-},
-async(email,password,done)=>{
+        } catch (error) {
+          return done(error)
+        }
+      }
+    )
+  )
 
-try{
+  // CURRENT (JWT)
 
-const user = await userRepository.getByEmail(email)
-
-if(!user){
-return done(null,false,{message:"Usuario no encontrado"})
-}
-
-if(!isValidPassword(user,password)){
-return done(null,false,{message:"Password incorrecto"})
-}
-
-return done(null,user)
-
-}catch(error){
-
-return done(error)
-
-}
-
-}
-))
-
-// CURRENT
-
-passport.use("current",
-new JwtStrategy(
-{
-jwtFromRequest:ExtractJwt.fromAuthHeaderAsBearerToken(),
-secretOrKey:process.env.JWT_SECRET
-},
-async(jwt_payload,done)=>{
-
-return done(null,jwt_payload.user)
-
-}
-))
+  passport.use(
+    "current",
+    new JwtStrategy(
+      {
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        secretOrKey: process.env.JWT_SECRET
+      },
+      async (jwt_payload, done) => {
+        try {
+          return done(null, jwt_payload.user)
+        } catch (error) {
+          return done(error)
+        }
+      }
+    )
+  )
 
 }
 

@@ -39,7 +39,7 @@ code:uuid(),
 
 amount,
 
-purchaser:"user@email.com"
+purchaser:req.user.email
 
 })
 
