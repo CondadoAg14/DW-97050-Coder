@@ -9,6 +9,10 @@ const ticketRepository = new TicketRepository()
 
 export default class CartService {
 
+  async getCarts() {
+    return await cartRepository.getCarts()
+  }
+
   async getCartById(id) {
     return await cartRepository.getCartById(id)
   }

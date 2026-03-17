@@ -1,4 +1,5 @@
 import UserRepository from "../repositories/user.repository.js";
+import CartRepository from "../repositories/carts.repository.js";
 import PasswordResetDAO from "../dao/mongo/passwordReset.dao.js";
 import { createHash, isValidPassword } from "../utils/bcrypt.js";
 import { generateToken } from "../utils/jwt.js";
@@ -6,6 +7,7 @@ import { sendMail } from "../utils/mailer.js";
 import crypto from "crypto";
 
 const userRepo = new UserRepository();
+const cartRepo = new CartRepository();
 const passwordResetDAO = new PasswordResetDAO();
 
 export default class SessionsService {
@@ -14,6 +16,10 @@ export default class SessionsService {
     if (!userData.password) throw new Error("Password requerida");
 
     userData.password = createHash(userData.password);
+
+    const cart = await cartRepo.createCart({ products: [] });
+
+    userData.cart = cart._id;
 
     const newUser = await userRepo.createUser(userData);
 
@@ -81,7 +87,7 @@ export default class SessionsService {
     if (!token || !newPassword)
       throw new Error("Token y nueva contraseña requeridos");
 
-    const reset = await passwordResetDAO.findOne({ token });
+    const reset = await passwordResetDAO.readOne({ token });
     if (!reset) throw new Error("Token inválido");
     if (reset.expires < Date.now()) throw new Error("Token expirado");
 
