@@ -1,31 +1,16 @@
-import {Router} from "express"
-import passport from "passport"
+import { Router } from "express";
+import passport from "passport";
+import { authorize } from "../middlewares/authorization.js";
+import productsController from "../controllers/products.controller.js";
 
-import {authorize} from "../middlewares/authorization.js"
+const router = Router();
 
-import {ProductModel} from "../models/product.model.js"
-
-const router = Router()
-
-router.get("/",async(req,res)=>{
-
-const products = await ProductModel.find()
-
-res.send(products)
-
-})
-
+router.get("/", productsController.getAllProducts);
 router.post(
-"/",
-passport.authenticate("current",{session:false}),
-authorize(["admin"]),
-async(req,res)=>{
+  "/",
+  passport.authenticate("current", { session: false }),
+  authorize(["admin"]),
+  productsController.createProduct
+);
 
-const product = await ProductModel.create(req.body)
-
-res.send(product)
-
-}
-)
-
-export default router
+export default router;

@@ -1,147 +1,27 @@
-import {Router} from "express"
-import passport from "passport"
+import { Router } from "express";
+import passport from "passport";
+import {
+  register,
+  login,
+  current,
+  forgotPassword,
+  resetPassword
+} from "../controllers/sessions.controller.js";
 
-import {generateToken} from "../utils/jwt.js"
-import UserDTO from "../dto/user.dto.js"
+const router = Router();
 
-import {sendMail} from "../utils/mailer.js"
+router.post("/register", register);
 
-import crypto from "crypto"
-
-import PasswordReset from "../models/passwordReset.model.js"
-import UserModel from "../models/user.model.js"
-
-import {createHash} from "../utils/bcrypt.js"
-
-const router = Router()
-
-// REGISTER
-
-router.post("/register",(req,res,next)=>{
-
-passport.authenticate("register",(err,user,info)=>{
-
-if(err){
-return res.status(500).send({error:err.message})
-}
-
-if(!user){
-return res.status(400).send({
-error: info?.message || "No se pudo registrar el usuario"
-})
-}
-
-res.send({
-status:"success",
-message:"Usuario registrado"
-})
-
-})(req,res,next)
-
-})
-
-// LOGIN
-
-router.post("/login",(req,res,next)=>{
-
-passport.authenticate("login",(err,user,info)=>{
-
-if(err){
-return res.status(500).send({error:err.message})
-}
-
-if(!user){
-return res.status(400).send({
-error: info?.message || "Credenciales incorrectas"
-})
-}
-
-const token = generateToken(user)
-
-res.send({
-status:"success",
-token
-})
-
-})(req,res,next)
-
-})
-
-// CURRENT
+router.post("/login", login);
 
 router.get(
-"/current",
-passport.authenticate("current",{session:false}),
-(req,res)=>{
+  "/current",
+  passport.authenticate("current", { session: false }),
+  current
+);
 
-const user = new UserDTO(req.user)
+router.post("/forgot-password", forgotPassword);
 
-res.send(user)
+router.post("/reset-password/:token", resetPassword);
 
-}
-)
-
-// FORGOT PASSWORD
-
-router.post("/forgot-password",async(req,res)=>{
-
-const {email} = req.body
-
-const user = await UserModel.findOne({email})
-
-if(!user){
-return res.send({message:"Usuario no encontrado"})
-}
-
-const token = crypto.randomBytes(20).toString("hex")
-
-await PasswordReset.create({
-
-email,
-token,
-expires:Date.now()+3600000
-
-})
-
-const link = `http://localhost:8080/reset-password/${token}`
-
-await sendMail(email,"Recuperar contraseña",
-`<a href="${link}">Restablecer contraseña</a>`)
-
-res.send({message:"Correo enviado"})
-
-})
-
-// RESET PASSWORD
-
-router.post("/reset-password/:token",async(req,res)=>{
-
-const reset = await PasswordReset.findOne({
-
-token:req.params.token
-
-})
-
-if(!reset){
-return res.send({error:"Token inválido"})
-}
-
-if(reset.expires < Date.now()){
-return res.send({error:"Token expirado"})
-}
-
-const {password} = req.body
-
-const user = await UserModel.findOne({email:reset.email})
-
-user.password = createHash(password)
-
-await user.save()
-
-await PasswordReset.deleteOne({_id:reset._id})
-
-res.send({message:"Contraseña actualizada"})
-
-})
-
-export default router
+export default router;

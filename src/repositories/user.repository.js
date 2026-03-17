@@ -1,17 +1,31 @@
-import UserDAO from "../dao/user.dao.js"
+import UserDAO from "../dao/mongo/user.dao.js"
 
-export default class UserRepository{
+const userDAO = new UserDAO()
 
-constructor(){
-this.dao = new UserDAO()
-}
+export default class UserRepository {
 
-getByEmail = async(email)=>{
-return this.dao.getByEmail(email)
-}
+ async getUsers(){
+  return await userDAO.readAll()
+ }
 
-create = async(user)=>{
-return this.dao.create(user)
-}
+ async getUserById(id){
+  return await userDAO.readOne({_id:id})
+ }
+
+ async getUserByEmail(email){
+  return await userDAO.readOne({email})
+ }
+
+ async createUser(user){
+  return await userDAO.create(user)
+ }
+
+ async updateUser(id,data){
+  return await userDAO.update(id,data)
+ }
+
+ async deleteUser(id){
+  return await userDAO.delete(id)
+ }
 
 }

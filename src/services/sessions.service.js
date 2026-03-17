@@ -1,0 +1,92 @@
+import UserRepository from "../repositories/user.repository.js";
+import PasswordResetDAO from "../dao/mongo/passwordReset.dao.js";
+import { createHash, isValidPassword } from "../utils/bcrypt.js";
+import { generateToken } from "../utils/jwt.js";
+import { sendMail } from "../utils/mailer.js";
+import crypto from "crypto";
+
+const userRepo = new UserRepository();
+const passwordResetDAO = new PasswordResetDAO();
+
+export default class SessionsService {
+
+  async register(userData) {
+    if (!userData.password) throw new Error("Password requerida");
+
+    userData.password = createHash(userData.password);
+
+    const newUser = await userRepo.createUser(userData);
+
+    return {
+      status: "success",
+      message: "Usuario registrado",
+      user: newUser,
+    };
+  }
+
+  async login({ email, password }) {
+    if (!email || !password) throw new Error("Email y password son requeridos");
+
+    const user = await userRepo.getUserByEmail(email);
+    if (!user) throw new Error("Usuario no encontrado");
+
+    const valid = isValidPassword(user, password);
+    if (!valid) throw new Error("Password incorrecto");
+
+    const token = generateToken(user);
+
+    return {
+      status: "success",
+      token,
+      user,
+    };
+  }
+
+  async getCurrentUser(user) {
+    if (!user) throw new Error("Usuario no autenticado");
+    return user;
+  }
+
+  async forgotPassword(email) {
+    if (!email) throw new Error("Email requerido");
+
+    const user = await userRepo.getUserByEmail(email);
+    if (!user) throw new Error("Usuario no encontrado");
+
+    const token = crypto.randomBytes(20).toString("hex");
+
+    await passwordResetDAO.create({
+      email,
+      token,
+      expires: Date.now() + 3600000,
+    });
+
+    const link = `http://localhost:8080/reset-password/${token}`;
+
+    try {
+      await sendMail(email, "Recuperar contraseña", `<a href="${link}">Restablecer contraseña</a>`);
+    } catch (err) {
+      throw new Error("Error enviando correo: " + err.message);
+    }
+
+    return { message: "Correo enviado" };
+  }
+
+  async resetPassword(token, newPassword) {
+    if (!token || !newPassword) throw new Error("Token y nueva contraseña requeridos");
+
+    const reset = await passwordResetDAO.findOne({ token });
+    if (!reset) throw new Error("Token inválido");
+    if (reset.expires < Date.now()) throw new Error("Token expirado");
+
+    const user = await userRepo.getUserByEmail(reset.email);
+    if (!user) throw new Error("Usuario no encontrado");
+
+    user.password = createHash(newPassword);
+    await userRepo.update(user._id, user);
+
+    await passwordResetDAO.delete(reset._id);
+
+    return { message: "Contraseña actualizada" };
+  }
+}
