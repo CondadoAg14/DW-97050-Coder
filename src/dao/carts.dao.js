@@ -7,15 +7,19 @@ export default class CartDAO {
  }
 
  async readAll(filter={}){
-  return await CartModel.find(filter)
+  return await CartModel.find(filter).lean()
  }
 
  async readOne(filter){
-  return await CartModel.findOne(filter)
+  return await CartModel.findOne(filter).lean()
  }
 
  async update(id,data){
-  return await CartModel.findByIdAndUpdate(id,data,{new:true})
+  return await CartModel.findByIdAndUpdate(
+   id,
+   { $set: data },
+   { new: true }
+  )
  }
 
  async delete(id){

@@ -4,28 +4,36 @@ const productRepository = new ProductRepository()
 
 export default class ProductService {
 
- async getProducts(){
-  return await productRepository.getProducts()
+ async getProducts({ page = 1, limit = 10 } = {}) {
+  return await productRepository.getProducts({ page, limit })
  }
 
- async getProductById(id){
+ async getProductById(id) {
   return await productRepository.getProductById(id)
  }
 
- async createProduct(product){
+ async createProduct(product) {
 
-  if(!product.title){
+  if (!product.title) {
    throw new Error("Product must have title")
+  }
+
+  if (!product.price) {
+   throw new Error("Product must have price")
+  }
+
+  if (product.stock == null) {
+   throw new Error("Product must have stock")
   }
 
   return await productRepository.createProduct(product)
  }
 
- async updateProduct(id,data){
-  return await productRepository.updateProduct(id,data)
+ async updateProduct(id, data) {
+  return await productRepository.updateProduct(id, data)
  }
 
- async deleteProduct(id){
+ async deleteProduct(id) {
   return await productRepository.deleteProduct(id)
  }
 

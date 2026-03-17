@@ -20,7 +20,7 @@ export default class SessionsService {
     return {
       status: "success",
       message: "Usuario registrado",
-      user: newUser,
+      user: userRepo.toDTO(newUser),
     };
   }
 
@@ -38,13 +38,14 @@ export default class SessionsService {
     return {
       status: "success",
       token,
-      user,
+      user: userRepo.toDTO(user),
     };
   }
 
   async getCurrentUser(user) {
     if (!user) throw new Error("Usuario no autenticado");
-    return user;
+
+    return userRepo.toDTO(user);
   }
 
   async forgotPassword(email) {
@@ -64,7 +65,11 @@ export default class SessionsService {
     const link = `http://localhost:8080/reset-password/${token}`;
 
     try {
-      await sendMail(email, "Recuperar contraseña", `<a href="${link}">Restablecer contraseña</a>`);
+      await sendMail(
+        email,
+        "Recuperar contraseña",
+        `<a href="${link}">Restablecer contraseña</a>`
+      );
     } catch (err) {
       throw new Error("Error enviando correo: " + err.message);
     }
@@ -73,7 +78,8 @@ export default class SessionsService {
   }
 
   async resetPassword(token, newPassword) {
-    if (!token || !newPassword) throw new Error("Token y nueva contraseña requeridos");
+    if (!token || !newPassword)
+      throw new Error("Token y nueva contraseña requeridos");
 
     const reset = await passwordResetDAO.findOne({ token });
     if (!reset) throw new Error("Token inválido");
@@ -81,6 +87,10 @@ export default class SessionsService {
 
     const user = await userRepo.getUserByEmail(reset.email);
     if (!user) throw new Error("Usuario no encontrado");
+
+    if (isValidPassword(user, newPassword)) {
+      throw new Error("No puedes usar la misma contraseña");
+    }
 
     user.password = createHash(newPassword);
     await userRepo.update(user._id, user);

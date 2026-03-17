@@ -6,8 +6,8 @@ export default class PasswordResetDAO {
     return await PasswordReset.create(data);
   }
 
-  async findOne(filter) {
-    return await PasswordReset.findOne(filter);
+  async readOne(filter) {
+    return await PasswordReset.findOne(filter).lean();
   }
 
   async delete(id) {

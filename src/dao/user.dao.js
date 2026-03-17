@@ -7,15 +7,19 @@ export default class UserDAO {
  }
 
  async readAll(filter = {}){
-  return await UserModel.find(filter)
+  return await UserModel.find(filter).lean()
  }
 
  async readOne(filter){
-  return await UserModel.findOne(filter)
+  return await UserModel.findOne(filter).lean()
  }
 
  async update(id,data){
-  return await UserModel.findByIdAndUpdate(id,data,{new:true})
+  return await UserModel.findByIdAndUpdate(
+   id,
+   { $set: data },
+   { new: true }
+  )
  }
 
  async delete(id){

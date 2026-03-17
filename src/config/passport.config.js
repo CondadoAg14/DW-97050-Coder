@@ -1,15 +1,13 @@
 import passport from "passport"
-import {Strategy as LocalStrategy} from "passport-local"
-import {Strategy as JwtStrategy, ExtractJwt} from "passport-jwt"
+import { Strategy as LocalStrategy } from "passport-local"
+import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt"
 
 import UserRepository from "../repositories/user.repository.js"
-import {createHash, isValidPassword} from "../utils/bcrypt.js"
+import { isValidPassword } from "../utils/bcrypt.js"
 
 const userRepository = new UserRepository()
 
 const initializePassport = () => {
-
-  // REGISTER
 
   passport.use(
     "register",
@@ -23,11 +21,11 @@ const initializePassport = () => {
 
           const { first_name, last_name } = req.body
 
-          if (!first_name || !last_name || !password) {
+          if (!first_name || !last_name || !email || !password) {
             return done(null, false, { message: "Datos incompletos" })
           }
 
-          const exists = await userRepository.getByEmail(email)
+          const exists = await userRepository.getUserByEmail(email)
 
           if (exists) {
             return done(null, false, { message: "Usuario ya existe" })
@@ -37,11 +35,11 @@ const initializePassport = () => {
             first_name,
             last_name,
             email,
-            password: createHash(password),
+            password,
             role: "user"
           }
 
-          const user = await userRepository.create(newUser)
+          const user = await userRepository.createUser(newUser)
 
           return done(null, user)
 
@@ -52,8 +50,6 @@ const initializePassport = () => {
     )
   )
 
-  // LOGIN
-
   passport.use(
     "login",
     new LocalStrategy(
@@ -63,7 +59,11 @@ const initializePassport = () => {
       async (email, password, done) => {
         try {
 
-          const user = await userRepository.getByEmail(email)
+          if (!email || !password) {
+            return done(null, false, { message: "Datos incompletos" })
+          }
+
+          const user = await userRepository.getUserByEmail(email)
 
           if (!user) {
             return done(null, false, { message: "Usuario no encontrado" })
@@ -81,8 +81,6 @@ const initializePassport = () => {
       }
     )
   )
-
-  // CURRENT (JWT)
 
   passport.use(
     "current",

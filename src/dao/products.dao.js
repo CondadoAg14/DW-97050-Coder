@@ -7,15 +7,19 @@ export default class ProductDAO {
  }
 
  async readAll(filter = {}){
-  return await ProductModel.find(filter)
+  return await ProductModel.find(filter).lean()
  }
 
  async readOne(filter){
-  return await ProductModel.findOne(filter)
+  return await ProductModel.findOne(filter).lean()
  }
 
  async update(id,data){
-  return await ProductModel.findByIdAndUpdate(id,data,{new:true})
+  return await ProductModel.findByIdAndUpdate(
+   id,
+   { $set: data },
+   { new: true }
+  )
  }
 
  async delete(id){

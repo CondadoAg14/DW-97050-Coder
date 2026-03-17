@@ -2,17 +2,27 @@ import mongoose from "mongoose"
 
 const schema = new mongoose.Schema({
 
-code:String,
+ code: {
+  type: String,
+  required: true,
+  unique: true
+ },
 
-purchase_datetime:{
-type:Date,
-default:Date.now
-},
+ purchase_datetime: {
+  type: Date,
+  default: Date.now
+ },
 
-amount:Number,
+ amount: {
+  type: Number,
+  required: true
+ },
 
-purchaser:String
+ purchaser: {
+  type: String,
+  required: true
+ }
 
 })
 
-export default mongoose.model("tickets",schema)
+export default mongoose.model("tickets", schema)

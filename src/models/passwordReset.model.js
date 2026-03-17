@@ -2,12 +2,27 @@ import mongoose from "mongoose"
 
 const schema = new mongoose.Schema({
 
-email:String,
+ code: {
+  type: String,
+  required: true,
+  unique: true
+ },
 
-token:String,
+ purchase_datetime: {
+  type: Date,
+  default: Date.now
+ },
 
-expires:Date
+ amount: {
+  type: Number,
+  required: true
+ },
+
+ purchaser: {
+  type: String,
+  required: true
+ }
 
 })
 
-export default mongoose.model("password_resets",schema)
+export default mongoose.model("tickets", schema)
